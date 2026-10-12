@@ -12,7 +12,7 @@ use std::sync::Arc;
 
 mod properties;
 
-pub(crate) const MAX_POTENTIAL: f64 = 50.0;
+pub(crate) const MAX_POTENTIAL: f64 = 500.0; // bene 2026-10-12: increased from 50 to 500 (to allow error cancellation for deep pockets)
 
 /// General specifications for the chemical potential in a DFT calculation.
 ///
