@@ -380,6 +380,17 @@ where
         // calculate total functional derivative
         dfdrho += &self.external_potential;
 
+        // ___Bene added 2026-10-12 
+        // Points at the cap are frozen (their EL residual is zeroed in euler_lagrange_equation).
+        // Drop the intrinsic part there, so rho_projected = f*exp(-MAX_POTENTIAL/m) stays tiny and
+        // finite instead of overflowing when a (chain-corrected) potential is capped.
+        dfdrho
+            .iter_mut()
+            .zip(self.external_potential.iter())
+            .filter(|&(_, &p)| p + f64::EPSILON >= MAX_POTENTIAL)
+            .for_each(|(df, &p)| *df = p);
+        // ___Bene added 2026-10-12 
+
         dfdrho
             .outer_iter_mut()
             .zip(self.functional.m().iter())
