@@ -117,18 +117,23 @@ impl<'a> FunctionalContribution for PureFMTAssocFunctional<'a> {
         });
         let mut phi = -(&n0 * &ln31) + n1n2 * &n3m1rec + n2n2 * n2 * PI36M1 * f3;
 
+        // CHANGE Bene 2026-10-13: change proposed by claude to avoid negative values
         // association
         if let Some(a) = self.association.as_ref() {
             let mut xi = -(&n2v * &n2v).sum_axis(Axis(0)) / (&n2 * &n2) + 1.0;
             xi.iter_mut().zip(&n2).for_each(|(xi, &n2)| {
                 if n2.re() < N0_CUTOFF * 4.0 * PI * p.m[0] * r.re().powi(2) {
                     *xi = N::one();
+                } else if xi.re() < 0.0 {
+                    *xi = N::zero(); // |n2v| > n2 only from FFT ringing; continuum bound xi in [0, 1]
                 }
             });
-            let rho0 = (&n0 / p.m[0] * &xi).insert_axis(Axis(0));
-
+            // n0 < 0 only from FFT ringing; the association term needs rho0 >= 0 (sqrt(1 + 4 Delta rho0))
+            let n0p = n0.mapv(|n0| if n0.re() < 0.0 { N::zero() } else { n0 });
+            let rho0 = (&n0p / p.m[0] * &xi).insert_axis(Axis(0));
             phi += &(a._helmholtz_energy_density(temperature, &rho0, &n2, &n3m1rec, &xi))?;
         }
+        // CHANGE OVER Bene 2026-10-13
 
         Ok(phi)
     }
